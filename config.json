@@ -1,6 +1,6 @@
 {
-    "token" : "BOT-TOKEN",
-    "repos" : {
+	"token" : "BOT-TOKEN",
+	"repos" : {
 		"alemibot" : -1001217448416
-    }
+	}
 }
