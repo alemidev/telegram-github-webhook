@@ -53,9 +53,9 @@ def github_event():
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			elif data["action"] == "created" and "comment" in data:
 				out =  (f"<b>{data['repository']['full_name']}</b> | " +
-						f"<code>{data['issue']['user']['login']}</code> <i>comment on issue</i>\n" +
+						f"<code>{data['issue']['user']['login']}</code> <i>new issue comment</i>\n" +
 						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
-						f"</a></u> <code>{data['comment']['user']['login']}</code> {data['comment']['body']}")
+						f"</a></u> <code>{data['comment']['user']['login']}</code> : {data['comment']['body']}")
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			else:
 				logger.error(" * [!] Not prepared to handle action \"%s\"\n> %s", data['action'], str(data))
@@ -63,6 +63,12 @@ def github_event():
 				out = io.BytesIO(json.dumps(data, indent=2).encode('utf-8'))
 				out.name = "issue-event.json"
 				bot.sendDocument(chat_id=target, document=out, caption=text, parse_mode=ParseMode.HTML)
+		elif "comment" in data: # New comment on commit or maybe on anything?
+			out =  (f"<b>{data['repository']['full_name']}</b> | " +
+					f"<code>{data['issue']['user']['login']}</code> <i>new comment</i>\n" +
+					f"→ [<a href=\"{data['comment']['url']}\">{data['comment']['commit_id'][:7]}</a>] " +
+					f"<code>{data['comment']['user']['login']}</code> : {data['comment']['body']}")
+			bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 		else: # Don't know (yet) what to do with this
 			logger.error(" * [!] Not prepared to handle update\n> %s", str(data))
 			text = f"<b>{data['repository']['full_name']}</b> | <i>unmapped event</i>"
