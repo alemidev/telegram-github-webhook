@@ -1,21 +1,19 @@
 #!/usr/bin/env python
 """
-This is a super simple Flask + python-telegram-bot microservice made to relay github updates to
-Telegram. It will require manual configuration, a telegram bot and a publicly accessible IP
-(where github can send updates). You should configure your repo-chat_id association insid
+telegram-github-webhook (or tgw) is a simple Flask + python-telegram-bot microservice made to
+relay github updates in Telegram chats. It will require a telegram bot and a publicly accessible IP
+(where github can send updates). You should configure your repo:chat_id association inside
 config.json, together with the bot token.
 """
-import json
-import io
+import logging, json, io, os
 
 from flask import Flask, request, redirect
 from telegram import Bot, ParseMode
 
 with open("config.json") as f:
-    CONFIG = json.load(f)
-
-BOT = Bot(CONFIG["token"])
-
+    config = json.load(f)
+logger = logging.getLogger()
+bot = Bot(config["token"])
 app = Flask(__name__)  # Standard Flask app
 
 @app.route("/", methods=["GET"])
@@ -24,24 +22,21 @@ def landing():
     return redirect('https://github.com/alemigliardi/telegram-github-webhook')
 
 @app.route("/", methods=["POST"])
-def github_push():
-    """
-    This is the main endpoint github will send updates to.
-    Parse the POST data and send a telegram message
-    """
+def github_event():
+    """This is the main endpoint github will send updates to. Parse and send telegram message"""
     data = request.json
-    if data["repository"]["name"] in CONFIG["repos"]:
-        target = CONFIG["repos"][data["repository"]["name"]]
+    if data["repository"]["name"] in config["repos"]:
+        target = config["repos"][data["repository"]["name"]]
         if "commits" in data: # New commits
             out = f"<b>{data['repository']['full_name']}</b> | <i>new commits</i>\n"
             for commit in data["commits"]:
                 out += (f"→ <code>{commit['author']['username']}</code> {commit['message']} " +
                         f"[<a href=\"{commit['url']}\">{commit['id'][:7]}</a>]\n")
-            BOT.send_message(target, out, parse_mode=ParseMode.HTML)
+            bot.send_message(target, out, parse_mode=ParseMode.HTML)
         elif "hook" in data: # New webhook or maybe just the initial event?
             out = (f"<b>{data['repository']['full_name']}</b> | <i>new hook</i>\n" +
                    f"→ <u>{data['hook']['config']['url']}</u> [{','.join(data['hook']['events'])}]")
-            BOT.send_message(target, out, parse_mode=ParseMode.HTML)
+            bot.send_message(target, out, parse_mode=ParseMode.HTML)
         elif "issue" in data: # Something happened in Issues
             if data["action"] == "opened":
                 labels = ",".join([ l["name"] for l in data["issue"]["labels"] ])
@@ -50,23 +45,23 @@ def github_push():
                         f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
                         f"</a></u> <b>{data['issue']['title']}</b> {data['issue']['body']} " +
                         f"<u>[<i>{labels}</i>]</u>")
-                BOT.send_message(target, out, parse_mode=ParseMode.HTML)
-            elif data["action"] == "labeled": # Do we really care?
-                pass
-            else: # TODO do this in logging module
-                print(f"[!] Not prepared to handle action \"{data['action']}\"\n")
-                print(str(data))
-                print()
-        else: # Don't know what to do with this
+                bot.send_message(target, out, parse_mode=ParseMode.HTML)
+            elif data["action"] == "labeled":
+                pass # Do we really care? We see labels when opened
+            else:
+                logger.error(" * [!] Not prepared to handle action \"%s\"\n> %s", data['action'], str(data))
+        else: # Don't know (yet) what to do with this
+            logger.error(" * [!] Not prepared to handle update\n> %s", str(data))
             text = f"<b>{data['repository']['full_name']}</b> | <i>unmapped event</i>"
             out = io.BytesIO(json.dumps(data, indent=2).encode('utf-8'))
             out.name = "event.json"
-            BOT.sendDocument(chat_id=target, document=out, caption=text, parse_mode=ParseMode.HTML)
-    else: # TODO do this in logging module
-        print("[!] Received event from unmapped repository\n")
-        print(str(data))
-        print() # separate with a blank line
+            bot.sendDocument(chat_id=target, document=out, caption=text, parse_mode=ParseMode.HTML)
+    else:
+        logger.warning(" * Received event from unmapped repository\n> %s", str(data))
     return "OK"
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=33333) # I have a NGINX proxy, do 0.0.0.0 to expose this service directly
+    app.run( # if you don't have a reverse proxy to put in front of this, set host 0.0.0.0
+        host= os.environ["TGW_HOST"] if "TGW_HOST" in os.environ else "127.0.0.1",
+        port= int(os.environ["TGW_PORT"]) if "TGW_PORT" in os.environ else 33333
+    )
