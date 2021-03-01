@@ -39,17 +39,30 @@ def github_event():
 			bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 		elif "issue" in data: # Something happened in Issues
 			if data["action"] == "opened":
-				labels = ",".join([ l["name"] for l in data["issue"]["labels"] ])
 				out =  (f"<b>{data['repository']['full_name']}</b> | " +
 						f"<code>{data['issue']['user']['login']}</code> <i>opened issue</i>\n" +
 						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
-						f"</a></u> <b>{data['issue']['title']}</b> {data['issue']['body']} " +
-						f"<u>[<i>{labels}</i>]</u>")
+						f"</a></u> <b>{data['issue']['title']}</b> {data['issue']['body']}")
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			elif data["action"] == "labeled":
-				pass # Do we really care? We see labels when opened
+				labels = ",".join([ l["name"] for l in data["issue"]["labels"] ])
+				out =  (f"<b>{data['repository']['full_name']}</b> | " +
+						f"<code>{data['issue']['user']['login']}</code> <i>labeled issue</i>\n" +
+						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
+						f"</a></u> <b>{data['issue']['title']}</b> <u>[{labels}]</u>")
+				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+			elif data["action"] == "created" and "comment" in data:
+				out =  (f"<b>{data['repository']['full_name']}</b> | " +
+						f"<code>{data['issue']['user']['login']}</code> <i>comment on issue</i>\n" +
+						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
+						f"</a></u> <code>{data['comment']['user']['login']}</code> {data['comment']['body']}")
+				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			else:
 				logger.error(" * [!] Not prepared to handle action \"%s\"\n> %s", data['action'], str(data))
+				text = f"<b>{data['repository']['full_name']}</b> | <i>unmapped issue event</i>"
+				out = io.BytesIO(json.dumps(data, indent=2).encode('utf-8'))
+				out.name = "issue-event.json"
+				bot.sendDocument(chat_id=target, document=out, caption=text, parse_mode=ParseMode.HTML)
 		else: # Don't know (yet) what to do with this
 			logger.error(" * [!] Not prepared to handle update\n> %s", str(data))
 			text = f"<b>{data['repository']['full_name']}</b> | <i>unmapped event</i>"
