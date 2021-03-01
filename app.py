@@ -39,21 +39,18 @@ def github_event():
 			bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 		elif "issue" in data: # Something happened in Issues
 			if data["action"] == "opened":
-				out =  (f"<b>{data['repository']['full_name']}</b> | " +
-						f"<code>{data['issue']['user']['login']}</code> <i>opened issue</i>\n" +
+				out =  (f"<b>{data['repository']['full_name']}</b> | <i>opened issue</i>\n" +
 						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
 						f"</a></u> <b>{data['issue']['title']}</b> {data['issue']['body']}")
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			elif data["action"] == "labeled":
 				labels = ",".join([ l["name"] for l in data["issue"]["labels"] ])
-				out =  (f"<b>{data['repository']['full_name']}</b> | " +
-						f"<code>{data['issue']['user']['login']}</code> <i>labeled issue</i>\n" +
+				out =  (f"<b>{data['repository']['full_name']}</b> | <i>labeled issue</i>\n" +
 						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
 						f"</a></u> <b>{data['issue']['title']}</b> <u>[{labels}]</u>")
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			elif data["action"] == "created" and "comment" in data:
-				out =  (f"<b>{data['repository']['full_name']}</b> | " +
-						f"<code>{data['issue']['user']['login']}</code> <i>new issue comment</i>\n" +
+				out =  (f"<b>{data['repository']['full_name']}</b> | <i>new issue comment</i>\n" +
 						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
 						f"</a></u> <code>{data['comment']['user']['login']}</code> : {data['comment']['body']}")
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
