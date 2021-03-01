@@ -1,7 +1,6 @@
 {
     "token" : "BOT-TOKEN",
     "repos" : {
-		"repo-name-1" : chat_id_1,
-		"repo-name-2" : chat_id_2
+		"alemibot" : -1001217448416
     }
 }
