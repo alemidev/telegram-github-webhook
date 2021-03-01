@@ -32,11 +32,11 @@ def github_event():
 			for commit in data["commits"]:
 				out += (f"→ <code>{commit['author']['username']}</code> {commit['message']} " +
 						f"[<a href=\"{commit['url']}\">{commit['id'][:7]}</a>]\n")
-			bot.send_message(target, out, parse_mode=ParseMode.HTML)
+			bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 		elif "hook" in data: # New webhook or maybe just the initial event?
 			out = (f"<b>{data['repository']['full_name']}</b> | <i>new hook</i>\n" +
 				   f"→ <u>{data['hook']['config']['url']}</u> [{','.join(data['hook']['events'])}]")
-			bot.send_message(target, out, parse_mode=ParseMode.HTML)
+			bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 		elif "issue" in data: # Something happened in Issues
 			if data["action"] == "opened":
 				labels = ",".join([ l["name"] for l in data["issue"]["labels"] ])
@@ -45,7 +45,7 @@ def github_event():
 						f"→ <u><a href=\"{data['issue']['url']}\">#{data['issue']['number']}" +
 						f"</a></u> <b>{data['issue']['title']}</b> {data['issue']['body']} " +
 						f"<u>[<i>{labels}</i>]</u>")
-				bot.send_message(target, out, parse_mode=ParseMode.HTML)
+				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			elif data["action"] == "labeled":
 				pass # Do we really care? We see labels when opened
 			else:
