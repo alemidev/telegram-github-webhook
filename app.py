@@ -40,7 +40,7 @@ def github_event():
 		elif "member" in data:
 			if data["action"] == "added":
 				out =  (f"<b>{data['repository']['full_name']}</b> | <i>new collaborator</i>\n" +
-						f"→ <u><a href=\"{data['member']['url']}\">{data['member']['login']}</a></u>")
+						f"→ <u><a href=\"{data['member']['html_url']}\">{data['member']['login']}</a></u>")
 				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
 			else:
 				logger.error(" * [!] Not prepared to handle action \"%s\"\n> %s", data['action'], str(data))
