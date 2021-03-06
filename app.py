@@ -37,6 +37,17 @@ def github_event():
 			out = (f"<b>{data['repository']['full_name']}</b> | <i>new hook</i>\n" +
 				   f"→ <u>{data['hook']['config']['url']}</u> [{','.join(data['hook']['events'])}]")
 			bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+		elif "member" in data:
+			if data["action"] == "added":
+				out =  (f"<b>{data['repository']['full_name']}</b> | <i>new collaborator</i>\n" +
+						f"→ <u><a href=\"{data['member']['url']}\">{data['member']['login']}</a></u>")
+				bot.send_message(target, out, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+			else:
+				logger.error(" * [!] Not prepared to handle action \"%s\"\n> %s", data['action'], str(data))
+				text = f"<b>{data['repository']['full_name']}</b> | <i>unmapped member event</i>"
+				out = io.BytesIO(json.dumps(data, indent=2).encode('utf-8'))
+				out.name = "member-event.json"
+				bot.sendDocument(chat_id=target, document=out, caption=text, parse_mode=ParseMode.HTML)
 		elif "issue" in data: # Something happened in Issues
 			if data["action"] == "opened":
 				out =  (f"<b>{data['repository']['full_name']}</b> | <i>opened issue</i>\n" +
